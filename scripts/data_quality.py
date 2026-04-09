@@ -49,7 +49,7 @@ def get_checks(project):
          f"SELECT COUNT(*) AS total, COUNTIF(o.order_id IS NULL) AS failed FROM `{p}.curated.order_items` oi LEFT JOIN `{p}.curated.orders` o USING (order_id)"),
 
         ("duplicate_order_ids", "curated.orders", "WARNING",
-         f"SELECT COUNT(*) AS total, SUM(IF(cnt > 1, cnt, 0)) AS failed FROM (SELECT order_id, COUNT(*) AS cnt FROM `{p}.curated.orders` GROUP BY order_id)"),
+         f"SELECT COUNT(*) AS total, COUNTIF(cnt > 1) AS failed FROM (SELECT order_id, COUNT(*) AS cnt FROM `{p}.curated.orders` GROUP BY order_id)"),
 
         ("invalid_date_sequence", "curated.orders", "ERROR",
          f"""SELECT COUNT(*) AS total,
