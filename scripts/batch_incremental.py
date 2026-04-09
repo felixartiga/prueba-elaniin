@@ -101,7 +101,7 @@ def merge_orders(client, project, batch_id, watermark_from):
     return {"table_name": "orders", "raw_count": delta_count, "new_count": new_count, "updated_count": updated_count}
 
 
-def insert_related(client, project, batch_id, watermark_from, table, pk, columns, select_sql):
+def insert_related(client, project, batch_id, table, pk, columns, select_sql):
     log.info("%s — INSERT nuevos", table)
     cols_str = ", ".join(columns)
     client.query(f"""
@@ -167,7 +167,7 @@ def main():
         p = args.project
         wf = watermark_from
 
-        metrics_list.append(insert_related(client, p, batch_id, wf, "order_items", "order_id",
+        metrics_list.append(insert_related(client, p, batch_id, "order_items", "order_id",
             ["order_id", "order_item_id", "product_id", "seller_id", "shipping_limit_date", "price", "freight_value", "total_value", "batch_id", "load_date", "source_file"],
             f"""SELECT oi.order_id, CAST(oi.order_item_id AS INT64), oi.product_id, oi.seller_id,
                 SAFE_CAST(oi.shipping_limit_date AS TIMESTAMP),
@@ -179,7 +179,7 @@ def main():
                 WHERE SAFE_CAST(o.order_purchase_timestamp AS TIMESTAMP) > TIMESTAMP('{wf}')
                 AND oi.order_id IS NOT NULL AND oi.price IS NOT NULL"""))
 
-        metrics_list.append(insert_related(client, p, batch_id, wf, "order_payments", "order_id",
+        metrics_list.append(insert_related(client, p, batch_id, "order_payments", "order_id",
             ["order_id", "payment_sequential", "payment_type", "payment_installments", "payment_value", "batch_id", "load_date", "source_file"],
             f"""SELECT op.order_id, CAST(op.payment_sequential AS INT64), UPPER(TRIM(op.payment_type)),
                 CAST(op.payment_installments AS INT64), ROUND(CAST(op.payment_value AS FLOAT64), 2),
@@ -189,7 +189,7 @@ def main():
                 WHERE SAFE_CAST(o.order_purchase_timestamp AS TIMESTAMP) > TIMESTAMP('{wf}')
                 AND op.order_id IS NOT NULL AND op.payment_value IS NOT NULL"""))
 
-        metrics_list.append(insert_related(client, p, batch_id, wf, "order_reviews", "review_id",
+        metrics_list.append(insert_related(client, p, batch_id, "order_reviews", "review_id",
             ["review_id", "order_id", "review_score", "review_comment_title", "review_comment_message", "review_creation_date", "review_answer_timestamp", "batch_id", "load_date", "source_file"],
             f"""SELECT r.review_id, r.order_id, CAST(r.review_score AS INT64),
                 NULLIF(TRIM(r.review_comment_title), ''), NULLIF(TRIM(r.review_comment_message), ''),
