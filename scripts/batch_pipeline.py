@@ -102,6 +102,7 @@ def main():
         status = "FAILED"
         error_msg = str(exc)
         log.error("Pipeline fallido: %s", exc)
+        raise
     finally:
         finished_at = datetime.now(timezone.utc)
         total_rows = sum(m["loaded_count"] for m in metrics_list)
@@ -111,9 +112,6 @@ def main():
 
     log.info("Status=%s | Tablas=%d | Filas=%d | Duración=%.1fs",
              status, len(metrics_list), total_rows, (finished_at - started_at).total_seconds())
-
-    if status == "FAILED":
-        raise SystemExit(1)
 
 
 if __name__ == "__main__":
